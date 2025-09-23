@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "ecommerce",
-    "slug": "ecommerce",
+    "name": "ecommerce-app",
+    "slug": "ecommerce-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "ecommerce",
+    "scheme": "ecommerceapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
