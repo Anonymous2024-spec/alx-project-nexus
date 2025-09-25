@@ -1,21 +1,7 @@
 import React, { useState, useRef } from "react";
 import { View, TextInput, TouchableOpacity, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
-interface SearchBarProps {
-  placeholder?: string;
-  value: string;
-  onChangeText: (text: string) => void;
-  onSearch?: (text: string) => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  onClear?: () => void;
-  showFilterButton?: boolean;
-  onFilterPress?: () => void;
-  disabled?: boolean;
-  autoFocus?: boolean;
-  style?: "default" | "rounded" | "minimal";
-}
+import type { SearchBarProps } from "../../types/components";
 
 const SearchBar: React.FC<SearchBarProps> = ({
   placeholder = "Search products...",

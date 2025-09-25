@@ -1,5 +1,10 @@
 {
   "expo": {
+    "expo": {
+      "web": {
+        "bundler": "metro"
+      }
+    },
     "name": "ecommerce-app",
     "slug": "ecommerce-app",
     "version": "1.0.0",

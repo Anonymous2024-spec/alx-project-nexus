@@ -1,18 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-interface ButtonProps {
-  title: string;
-  onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'small' | 'medium' | 'large';
-  disabled?: boolean;
-  loading?: boolean;
-  icon?: keyof typeof Ionicons.glyphMap;
-  iconPosition?: 'left' | 'right';
-  fullWidth?: boolean;
-}
+import type { ButtonProps } from '../../types/components';
 
 const Button: React.FC<ButtonProps> = ({
   title,
