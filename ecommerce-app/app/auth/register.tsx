@@ -3,9 +3,11 @@ import { View, Text, TouchableOpacity, Alert, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Button, Input } from "../../components/commons";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,7 +53,11 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView
+        className="flex-1 bg-white"
+        style={{ backgroundColor: colors.background }}
+        edges={["top", "left", "right"]}
+      >
         <StatusBar barStyle="dark-content" backgroundColor="white" />
 
         <View className="flex-1 px-6 pt-8">
