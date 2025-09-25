@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // Define the product type for search results
 interface SearchProduct {
@@ -20,6 +21,7 @@ interface SearchProduct {
 
 export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { colors } = useTheme();
   const [recentSearches, setRecentSearches] = useState([
     "MacBook",
     "Headphones",
@@ -71,6 +73,7 @@ export default function SearchScreen() {
   return (
     <SafeAreaView
       className="flex-1 bg-white"
+      style={{ backgroundColor: colors.background }}
       edges={["top", "left", "right", "bottom"]}
     >
       <ScrollView

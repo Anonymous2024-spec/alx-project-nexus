@@ -9,9 +9,11 @@ import {
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { SearchBar } from "../../components/commons";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { colors } = useTheme();
 
   // Categories data with icons
   const categories = [
@@ -26,19 +28,25 @@ export default function HomeScreen() {
       id: 1,
       name: "iPhone 15 Pro",
       price: "$990.99",
-      image: "https://images.unsplash.com/photo-1592899677977-9c10c23f31e1?w=400&h=300&fit=crop",
+      image:
+        "https://images.unsplash.com/photo-1592899677977-9c10c23f31e1?w=400&h=300&fit=crop",
     },
     {
       id: 2,
       name: "MacBook Air M3",
       price: "$1,299.99",
-      image: "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400&h=300&fit=crop",
+      image:
+        "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400&h=300&fit=crop",
     },
   ];
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
+      <SafeAreaView
+        className="flex-1 bg-white"
+        edges={["top"]}
+        style={{ backgroundColor: colors.background }}
+      >
         <StatusBar barStyle="light-content" backgroundColor="#007AFF" />
 
         <ScrollView
@@ -49,7 +57,9 @@ export default function HomeScreen() {
           {/* White Header with App Name */}
           <View className="bg-white px-6 pt-6 pb-4">
             <Text className="text-3xl font-bold text-neutral-900">ShopApp</Text>
-            <Text className="text-neutral-500 mt-1">Discover amazing products</Text>
+            <Text className="text-neutral-500 mt-1">
+              Discover amazing products
+            </Text>
           </View>
 
           {/* Search Bar Section */}
@@ -66,7 +76,9 @@ export default function HomeScreen() {
 
           {/* Categories Section */}
           <View className="px-6 mt-6">
-            <Text className="text-xl font-semibold text-neutral-800 mb-4">Categories</Text>
+            <Text className="text-xl font-semibold text-neutral-800 mb-4">
+              Categories
+            </Text>
             <View className="flex-row justify-between">
               {categories.map((category, index) => (
                 <TouchableOpacity
@@ -85,8 +97,10 @@ export default function HomeScreen() {
 
           {/* Featured Products Section */}
           <View className="px-6 mt-8">
-            <Text className="text-xl font-semibold text-neutral-800 mb-4">Featured Products</Text>
-            
+            <Text className="text-xl font-semibold text-neutral-800 mb-4">
+              Featured Products
+            </Text>
+
             {featuredProducts.map((product) => (
               <TouchableOpacity
                 key={product.id}
@@ -109,10 +123,12 @@ export default function HomeScreen() {
                     source={{ uri: product.image }}
                     className="w-full h-full rounded-lg"
                     resizeMode="cover"
-                    onError={() => console.log("Image failed to load:", product.image)}
+                    onError={() =>
+                      console.log("Image failed to load:", product.image)
+                    }
                   />
                 </View>
-                
+
                 {/* Product Information */}
                 <View className="flex-1">
                   <Text className="text-lg font-semibold text-neutral-900 mb-1">
@@ -122,9 +138,9 @@ export default function HomeScreen() {
                     {product.price}
                   </Text>
                 </View>
-                
+
                 {/* Add to Cart Button */}
-                <TouchableOpacity 
+                <TouchableOpacity
                   className="bg-primary-500 rounded-full w-10 h-10 items-center justify-center"
                   activeOpacity={0.8}
                 >

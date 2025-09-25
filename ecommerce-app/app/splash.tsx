@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, SafeAreaView, StatusBar } from "react-native";
+import { View, Text, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import { Button, LoadingSpinner, Logo } from "../components/commons";
+import { useTheme } from "@/contexts/ThemeContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SplashScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const { colors } = useTheme();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -20,7 +23,11 @@ export default function SplashScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: "#F8F9FA" }}>
+    <SafeAreaView
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
+      edges={["top", "left", "right", "bottom"]}
+    >
       <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
 
       <View className="flex-1 justify-between items-center px-8 py-16">

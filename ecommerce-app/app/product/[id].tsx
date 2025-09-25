@@ -13,9 +13,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Product } from "@/types/product";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function ProductDetailScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const params = useLocalSearchParams();
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -93,7 +95,11 @@ export default function ProductDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-white"
+      style={{ backgroundColor: colors.background }}
+      edges={["top", "left", "right"]}
+    >
       {/* Header */}
       <View className="bg-primary-500 px-4 py-4 flex-row justify-between items-center">
         <TouchableOpacity

@@ -13,9 +13,11 @@ import { Product, ProductFilters } from "../../types/product";
 import { ProductsListSkeleton } from "@/components/commons/ProductSkeleton";
 import { ProductCard } from "@/components/commons/ProductCard";
 import { FilterBottomSheet } from "@/components/commons/FilterBottomSheet";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function ProductsScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
@@ -188,6 +190,7 @@ export default function ProductsScreen() {
     <SafeAreaView
       className="flex-1 bg-white"
       edges={["top", "left", "right", "bottom"]}
+      style={{ backgroundColor: colors.background }}
     >
       {/* FIXED HEADER SECTION - DOESN'T SCROLL */}
       <View className="bg-white">
