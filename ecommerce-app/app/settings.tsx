@@ -22,11 +22,11 @@ export default function SettingsScreen() {
   };
 
   const handleEditProfile = () => {
-    Alert.alert("Edit Profile", "Navigate to profile editing screen");
+    router.push("/edit-profile");
   };
 
   const handleChangePassword = () => {
-    Alert.alert("Change Password", "Navigate to password change screen");
+    router.push("/change-password");
   };
 
   const handleEmailPreferences = () => {

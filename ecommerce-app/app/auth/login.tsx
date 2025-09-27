@@ -42,7 +42,6 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaProvider>
-      {" "}
       <SafeAreaView
         className="flex-1 bg-white"
         style={{ backgroundColor: colors.background }}

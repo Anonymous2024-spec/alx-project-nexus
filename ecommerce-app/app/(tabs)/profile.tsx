@@ -10,14 +10,15 @@ export default function ProfileScreen() {
   const { colors } = useTheme(); // ← ADD THIS
 
   const menuItems = [
-    { icon: "heart-outline", label: "My Wishlist" },
+    { icon: "heart-outline", label: "My Wishlist", route: "/wishlist" },
     { icon: "settings-outline", label: "Settings", route: "/settings" }, // ← ADD ROUTE
     { icon: "chatbubble-outline", label: "Contact Support" },
     { icon: "help-circle-outline", label: "Help & FAQ" },
     { icon: "log-out-outline", label: "Log out", isDestructive: true },
   ];
 
-  const handleMenuPress = (item: any) => { // ← ADD THIS FUNCTION
+  const handleMenuPress = (item: any) => {
+    // ← ADD THIS FUNCTION
     if (item.route) {
       router.push(item.route);
     } else {
@@ -38,13 +39,17 @@ export default function ProfileScreen() {
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
       >
         {/* Header */}
-        <View className="px-6 pt-6 pb-4">
-          <Text 
-            className="text-3xl font-bold"
-            style={{ color: colors.text }} // ← DYNAMIC COLOR
-          >
+        <View className="px-6 pt-6 pb-4 flex-row justify-between items-center">
+          <Text className="text-3xl font-bold" style={{ color: colors.text }}>
             Profile
           </Text>
+
+          <TouchableOpacity
+            onPress={() => router.push("/edit-profile")}
+            className="p-2"
+          >
+            <Ionicons name="create-outline" size={24} color={colors.text} />
+          </TouchableOpacity>
         </View>
 
         {/* User Info Section */}
@@ -61,13 +66,13 @@ export default function ProfileScreen() {
                 onError={() => console.log("Profile image failed to load")}
               />
             </View>
-            <Text 
+            <Text
               className="text-2xl font-semibold mb-1"
               style={{ color: colors.text }} // ← DYNAMIC COLOR
             >
               John Doe
             </Text>
-            <Text 
+            <Text
               className="text-lg"
               style={{ color: colors.textSecondary }} // ← DYNAMIC COLOR
             >
@@ -82,9 +87,9 @@ export default function ProfileScreen() {
             <TouchableOpacity
               key={index}
               className="flex-row items-center py-5 px-6 border-b"
-              style={{ 
+              style={{
                 backgroundColor: colors.background, // ← DYNAMIC COLOR
-                borderBottomColor: colors.border   // ← DYNAMIC COLOR
+                borderBottomColor: colors.border, // ← DYNAMIC COLOR
               }}
               activeOpacity={0.7}
               onPress={() => handleMenuPress(item)}
@@ -97,13 +102,13 @@ export default function ProfileScreen() {
               />
               <Text
                 className="text-lg flex-1 font-medium"
-                style={{ 
-                  color: item.isDestructive ? "#DC3545" : colors.text // ← DYNAMIC COLOR
+                style={{
+                  color: item.isDestructive ? "#DC3545" : colors.text, // ← DYNAMIC COLOR
                 }}
               >
                 {item.label}
               </Text>
-              
+
               {/* Add chevron for navigable items */}
               {item.route && (
                 <Ionicons

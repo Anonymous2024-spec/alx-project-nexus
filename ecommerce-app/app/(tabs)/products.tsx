@@ -1,32 +1,31 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Product, ProductFilters } from "../../types/product";
 import { ProductsListSkeleton } from "@/components/commons/ProductSkeleton";
 import { ProductCard } from "@/components/commons/ProductCard";
 import { FilterBottomSheet } from "@/components/commons/FilterBottomSheet";
+import SearchBar from "@/components/commons/SearchBar";
 import { useTheme } from "@/contexts/ThemeContext";
+import { HeaderCartIcon } from "@/components/commons/CartIcon";
 
 export default function ProductsScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
+
+  // Initialize filters with category from URL parameter
   const [filters, setFilters] = useState<ProductFilters>({
-    category: null,
+    category: (params.category as string) || null,
     priceRange: { min: 0, max: 2000 },
     sortBy: "price_asc",
   });
-  const [showFilterSheet, setShowFilterSheet] = useState(false);
 
   // Mock data using your exact Product interface
   const mockProducts: Product[] = [
@@ -122,6 +121,19 @@ export default function ProductsScreen() {
     },
   ];
 
+  // Update filters when URL parameters change
+  useEffect(() => {
+    if (params.category) {
+      setFilters((prev) => ({
+        ...prev,
+        category: params.category as string,
+      }));
+    }
+    if (params.q) {
+      setSearchQuery(params.q as string);
+    }
+  }, [params]);
+
   // Simulate API loading
   useEffect(() => {
     const loadProducts = async () => {
@@ -174,80 +186,61 @@ export default function ProductsScreen() {
   };
 
   const handleProductPress = (product: Product) => {
-    // Navigate to Product Detail Screen
     router.push(`/product/${product.id}`);
   };
 
   const handleRefresh = async () => {
     setLoading(true);
-    // Simulate refresh
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setProducts(mockProducts);
     setLoading(false);
   };
 
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const clearCategoryFilter = () => {
+    setFilters((prev) => ({ ...prev, category: null }));
+    // Update URL to remove category parameter
+    router.replace("/(tabs)/products");
+  };
+
+  const getCategoryDisplayName = (category: string) => {
+    return category.charAt(0).toUpperCase() + category.slice(1);
+  };
+
   return (
     <SafeAreaView
-      className="flex-1 bg-white"
+      className="flex-1"
       edges={["top", "left", "right", "bottom"]}
       style={{ backgroundColor: colors.background }}
     >
-      {/* FIXED HEADER SECTION - DOESN'T SCROLL */}
-      <View className="bg-white">
-        {/* Header */}
-        <View className="px-6 pt-6 pb-4 flex-row justify-between items-center">
-          <Text className="text-3xl font-bold text-neutral-900">Products</Text>
+      {/* Header */}
+      <View className="px-6 pt-6 pb-4 flex-row justify-between items-center">
+        <Text className="text-3xl font-bold" style={{ color: colors.text }}>
+          Products
+        </Text>
 
-          {/* Refresh Button */}
+        {/* Right side icons */}
+        <View className="flex-row items-center">
+          <HeaderCartIcon />
+
           <TouchableOpacity
-            className="p-2"
+            className="p-2 ml-2"
             onPress={handleRefresh}
             disabled={loading}
           >
             <Ionicons
               name="refresh"
               size={24}
-              color={loading ? "#ADB5BD" : "#007AFF"}
+              color={loading ? colors.textSecondary : colors.primary}
             />
-          </TouchableOpacity>
-        </View>
-
-        {/* Search Bar - FIXED */}
-        <View className="px-6 pb-4">
-          <View className="flex-row items-center bg-neutral-100 rounded-xl px-4 py-3">
-            <Ionicons name="search" size={24} color="#6C757D" />
-            <TextInput
-              className="flex-1 ml-3 text-lg"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              returnKeyType="search"
-              editable={!loading}
-            />
-          </View>
-        </View>
-
-        {/* Results Header - FIXED */}
-        <View className="px-6 pb-4 flex-row justify-between items-center">
-          <Text className="text-neutral-600">
-            {loading
-              ? "Loading products..."
-              : `${filteredProducts.length} products found`}
-          </Text>
-
-          {/* Filter Button */}
-          <TouchableOpacity
-            className={`flex-row items-center bg-neutral-100 rounded-lg px-3 py-2 ${loading ? "opacity-50" : ""}`}
-            onPress={() => setShowFilterSheet(true)}
-            disabled={loading}
-          >
-            <Ionicons name="options" size={16} color="#6C757D" />
-            <Text className="text-neutral-700 ml-2">Filters</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* SCROLLABLE PRODUCTS LIST ONLY */}
+      {/* SCROLLABLE PRODUCTS LIST */}
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
@@ -270,11 +263,21 @@ export default function ProductsScreen() {
               {/* Empty State */}
               {sortedProducts.length === 0 && !loading && (
                 <View className="items-center justify-center py-16">
-                  <Ionicons name="search" size={64} color="#ADB5BD" />
-                  <Text className="text-neutral-500 text-lg mt-4">
+                  <Ionicons
+                    name="search"
+                    size={64}
+                    color={colors.textSecondary}
+                  />
+                  <Text
+                    className="text-lg mt-4"
+                    style={{ color: colors.textSecondary }}
+                  >
                     No products found
                   </Text>
-                  <Text className="text-neutral-400 text-center mt-2">
+                  <Text
+                    className="text-center mt-2"
+                    style={{ color: colors.textSecondary }}
+                  >
                     Try adjusting your search terms or filters
                   </Text>
                 </View>
