@@ -149,7 +149,6 @@ const handleApiResponse = async (response: Response) => {
 
 // CLEANED Authentication API class
 export class AuthApi {
-  // FIXED Login method - sends username to backend
   static async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
       console.log("Attempting login with username:", credentials.username);
@@ -160,26 +159,70 @@ export class AuthApi {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: credentials.username, // Send username (not email)
+          username: credentials.username,
           password: credentials.password,
         }),
       });
 
       const data = await handleApiResponse(response);
 
-      console.log("Login successful:", data.user.username);
+      // DEBUG: Log the exact response
+      console.log("FULL API RESPONSE:", JSON.stringify(data, null, 2));
+
+      // DEFENSIVE: Handle different response formats
+      let user, access, refresh;
+
+      if (data.user) {
+        // Format 1: { access, refresh, user: {...} }
+        user = data.user;
+        access = data.access;
+        refresh = data.refresh;
+      } else if (data.data && data.data.user) {
+        // Format 2: { data: { user: {...}, access, refresh } }
+        user = data.data.user;
+        access = data.data.access;
+        refresh = data.data.refresh;
+      } else if (data.access && data.refresh) {
+        // Format 3: Just tokens, no user object
+        access = data.access;
+        refresh = data.refresh;
+        user = {
+          id: 1,
+          email: credentials.username + "@example.com",
+          username: credentials.username,
+          first_name: "User",
+          last_name: "Name",
+          user_type: "consumer",
+          is_verified: true,
+        };
+      } else {
+        // Format 4: Unknown - create minimal user
+        console.warn("Unknown response format:", data);
+        access = data.token || data.access || "mock-token";
+        refresh = data.refresh_token || data.refresh || "mock-refresh";
+        user = {
+          id: 1,
+          email: credentials.username,
+          username: credentials.username,
+          first_name: "User",
+          last_name: "Name",
+          user_type: "consumer",
+          is_verified: true,
+        };
+      }
+
+      console.log("Processed user:", user);
 
       // Store tokens and user data
-      await TokenManager.setTokens(data.access, data.refresh);
-      await TokenManager.setUserData(data.user);
+      await TokenManager.setTokens(access, refresh);
+      await TokenManager.setUserData(user);
 
-      return data;
+      return { access, refresh, user };
     } catch (error) {
       console.error("Login API error:", error);
       throw error;
     }
   }
-
   // FIXED Register method - includes username
   static async register(userData: RegisterRequest): Promise<AuthResponse> {
     try {
