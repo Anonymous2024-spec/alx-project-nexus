@@ -27,6 +27,7 @@ The **ProDev Frontend Engineering** program is an intensive 4-month bootcamp des
 - **State Management**: Mastered Context API and Redux for complex application state handling
 - **Semantic HTML**: Building accessible and SEO-friendly web structures
 - **Responsive Design**: Creating mobile-first, cross-device compatible applications
+- **CSS Preprocessors**: SASS/SCSS extends CSS with advanced features
 
 ### Advanced Frontend Technologies
 - **Next.js**: Server-side rendering, static site generation, and full-stack React applications
@@ -52,7 +53,6 @@ const technologiesLearned = {
   dataFetching: ['GraphQL', 'REST APIs', 'Apollo Client'],
   tools: ['Git', 'VS Code', 'Chrome DevTools'],
   deployment: ['Vercel', 'Netlify', 'GitHub Pages'],
-  testing: ['Jest', 'React Testing Library'],
   mobile: ['PWA', 'Responsive Design']
 };
 ```
@@ -71,7 +71,7 @@ A comprehensive full-stack application replicating core Airbnb functionalities:
 - Payment processing simulation
 
 **Technologies Used:**
-- **Frontend**: Next.js, TypeScript, TailwindCSS
+- **Frontend**: React Native, TypeScript, NativeWindCSS
 - **State Management**: Context API + useReducer
 - **Data Fetching**: GraphQL with Apollo Client
 - **Deployment**: Vercel
