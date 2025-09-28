@@ -99,10 +99,9 @@ export default function ProductsScreen() {
     handleParamsAndFetch();
   }, [params.category, params.q, dispatch]);
 
-  // Fetch when redux filters change (from filter sheet)
+  // In your ProductsScreen, in the second useEffect, change this:
   useEffect(() => {
     const fetchWithCurrentFilters = async () => {
-      // Skip if this is the initial load (handled above)
       if (!reduxFilters.category && !reduxSearchQuery) return;
 
       console.log("🔄 Filters changed, fetching:", {
@@ -115,8 +114,8 @@ export default function ProductsScreen() {
           fetchProducts({
             limit: 20,
             offset: 0,
-            category: reduxFilters.category || undefined,
-            search: reduxSearchQuery || undefined,
+            category: reduxFilters.category || undefined, // KEEP THIS
+            search: reduxSearchQuery || undefined, // AND THIS
           })
         ).unwrap();
       } catch (error) {
@@ -124,11 +123,9 @@ export default function ProductsScreen() {
       }
     };
 
-    // Debounce the fetch
     const timeoutId = setTimeout(fetchWithCurrentFilters, 300);
     return () => clearTimeout(timeoutId);
   }, [reduxFilters.category, reduxSearchQuery, dispatch]);
-
   // Apply local filtering and sorting
   const filteredProducts = products.filter((product) => {
     const matchesPrice =
