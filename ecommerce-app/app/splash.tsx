@@ -2,13 +2,11 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
 import { Button, LoadingSpinner, Logo } from "../components/commons";
-import { useTheme } from "@/contexts/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SplashScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const { colors } = useTheme();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -19,13 +17,12 @@ export default function SplashScreen() {
   }, []);
 
   const handleGetStarted = () => {
-    router.push("/auth/login");
+    router.push("./auth/login");
   };
 
   return (
     <SafeAreaView
-      className="flex-1"
-      style={{ backgroundColor: colors.background }}
+      className="flex-1 bg-white" // Use hardcoded color
       edges={["top", "left", "right", "bottom"]}
     >
       <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />

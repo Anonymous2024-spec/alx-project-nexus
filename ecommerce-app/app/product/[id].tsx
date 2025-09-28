@@ -14,6 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Product } from "@/types/product";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useCart } from "@/lib/redux/hooks";
+import { CartIcon } from "@/components/commons/CartIcon";
 
 export default function ProductDetailScreen() {
   const router = useRouter();
@@ -22,19 +24,21 @@ export default function ProductDetailScreen() {
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const { addToCart, isInCart } = useCart();
 
   // Mock product data - in real app, you'd fetch by ID or get from route params
-  const product: Product = {
-    id: Number(params.id) || 4,
-    title: "iPhone 15 Pro Max",
-    description:
-      "The most advanced iPhone yet, featuring the powerful A17 Pro chip, titanium design, and revolutionary camera system with 5x Telephoto zoom.",
-    price: 1199.99,
-    category: "electronics",
-    image:
-      "https://images.unsplash.com/photo-1592899677977-9c10c23f31e1?w=400&h=400&fit=crop",
-    rating: { rate: 4.8, count: 342 },
-  };
+  // Get the actual product data
+  const product: Product = params.productData
+    ? JSON.parse(params.productData as string)
+    : {
+        id: Number(params.id) || 1,
+        title: "Product not found",
+        description: "This product could not be loaded",
+        price: 0,
+        category: "unknown",
+        image: "",
+        rating: { rate: 0, count: 0 },
+      };
 
   const handleBack = () => {
     router.back();
@@ -51,9 +55,17 @@ export default function ProductDetailScreen() {
   };
 
   const handleAddToCart = () => {
+    addToCart(product, quantity);
     Alert.alert(
       "Added to Cart",
-      `${quantity} x ${product.title} added to your cart`
+      `${quantity} x ${product.title} added to your cart`,
+      [
+        { text: "Continue Shopping", style: "default" },
+        {
+          text: "View Cart",
+          onPress: () => router.push("/cart"),
+        },
+      ]
     );
   };
 
@@ -110,12 +122,15 @@ export default function ProductDetailScreen() {
           <Text className="text-white text-lg font-medium ml-1">Back</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          className="p-2"
-          onPress={() => setShowOptionsModal(true)}
-        >
-          <Ionicons name="ellipsis-horizontal" size={24} color="white" />
-        </TouchableOpacity>
+        <View className="flex-row items-center">
+          <CartIcon size={24} color="white" showBadge={true} />
+          <TouchableOpacity
+            className="p-2 ml-2"
+            onPress={() => setShowOptionsModal(true)}
+          >
+            <Ionicons name="ellipsis-horizontal" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -259,7 +274,6 @@ export default function ProductDetailScreen() {
           </View>
         </View>
       </ScrollView>
-
       {/* Options Modal */}
       <Modal
         visible={showOptionsModal}

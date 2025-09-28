@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useCart } from "@/contexts/CartContext";
+import { useCart } from "@/lib/redux/hooks";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface CartIconProps {

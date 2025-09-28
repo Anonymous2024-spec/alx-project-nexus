@@ -11,7 +11,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useCart, CartItem } from "@/contexts/CartContext";
+import { useCart } from "@/lib/redux/hooks";
+import { CartItem } from "@/lib/redux/slices/cartSlice";
 import Button from "@/components/commons/Button";
 
 export default function CartScreen() {

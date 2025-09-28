@@ -7,36 +7,62 @@ import {
   GET_PRODUCT_BY_ID,
 } from "@/lib/graphql/queries";
 
-// GraphQL Async Thunks
+// GraphQL Async Thunks with proper error handling
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
-  async (variables?: { limit?: number; offset?: number }) => {
+  async (variables?: {
+    limit?: number;
+    offset?: number;
+    category?: string;
+    search?: string;
+  }) => {
     try {
-      const { data } = await apolloClient.query({
+      const { data } = await apolloClient.query<{ products?: Product[] }>({
         query: GET_PRODUCTS,
         variables: variables || { limit: 20, offset: 0 },
-        fetchPolicy: "cache-first", // Use cache when available
+        fetchPolicy: "cache-first",
       });
-      return data.products as Product[];
-    } catch (error) {
+
+      // Debug: Check the actual response structure
+      console.log("Products API response:", data);
+
+      // Handle different response formats
+      if (data && data.products) {
+        return data.products as Product[];
+      } else if (data && Array.isArray(data)) {
+        return data as Product[]; // Direct array response
+      } else {
+        console.warn("Unexpected products response format:", data);
+        return []; // Return empty array as fallback
+      }
+    } catch (error: any) {
       console.error("GraphQL Error fetching products:", error);
-      throw error;
+      throw new Error(error.message || "Failed to fetch products");
     }
   }
 );
 
 export const fetchCategories = createAsyncThunk(
   "products/fetchCategories",
-  async () => {
+  async (_, { rejectWithValue }) => {
     try {
-      const { data } = await apolloClient.query({
+      const { data } = await apolloClient.query<{ categories: string[] }>({
         query: GET_CATEGORIES,
         fetchPolicy: "cache-first",
       });
-      return data.categories as string[];
-    } catch (error) {
+
+      console.log("GraphQL Categories Response:", data);
+
+      // FIX: Handle the correct response format
+      if (data && data.categories && Array.isArray(data.categories)) {
+        return data.categories;
+      } else {
+        console.warn("Unexpected categories format from GraphQL:", data);
+        return rejectWithValue("Invalid categories response format");
+      }
+    } catch (error: any) {
       console.error("GraphQL Error fetching categories:", error);
-      throw error;
+      return rejectWithValue(error.message || "Failed to fetch categories");
     }
   }
 );
@@ -45,15 +71,23 @@ export const fetchProductById = createAsyncThunk(
   "products/fetchProductById",
   async (id: number) => {
     try {
-      const { data } = await apolloClient.query({
+      const { data } = await apolloClient.query<{ product?: Product }>({
         query: GET_PRODUCT_BY_ID,
         variables: { id },
         fetchPolicy: "cache-first",
       });
-      return data.product as Product;
-    } catch (error) {
+
+      // Handle response format
+      if (data && data.product) {
+        return data.product as Product;
+      } else if (data && typeof data === "object") {
+        return data as Product; // Direct object response
+      } else {
+        throw new Error("Invalid product response format");
+      }
+    } catch (error: any) {
       console.error("GraphQL Error fetching product:", error);
-      throw error;
+      throw new Error(error.message || "Failed to fetch product");
     }
   }
 );
@@ -88,6 +122,10 @@ const productSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    // Add a reducer to manually set products (useful for search/filter results)
+    setProducts: (state, action: PayloadAction<Product[]>) => {
+      state.products = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -99,32 +137,33 @@ const productSlice = createSlice({
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
         state.products = action.payload;
+        state.error = null;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.error.message || "Failed to fetch products via GraphQL";
+        state.error = action.error.message || "Failed to fetch products";
       })
       // Fetch Categories
       .addCase(fetchCategories.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.loading = false;
         state.categories = action.payload;
+        state.error = null;
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.error.message || "Failed to fetch categories via GraphQL";
+        state.error = action.error.message || "Failed to fetch categories";
       })
       // Fetch Single Product
       .addCase(fetchProductById.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchProductById.fulfilled, (state, action) => {
         state.loading = false;
-        // Update product in array if it exists, or add it
         const existingIndex = state.products.findIndex(
           (p) => p.id === action.payload.id
         );
@@ -133,15 +172,21 @@ const productSlice = createSlice({
         } else {
           state.products.push(action.payload);
         }
+        state.error = null;
       })
       .addCase(fetchProductById.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.error.message || "Failed to fetch product via GraphQL";
+        state.error = action.error.message || "Failed to fetch product";
       });
   },
 });
 
-export const { setSearchQuery, setFilters, clearFilters, clearError } =
-  productSlice.actions;
+export const {
+  setSearchQuery,
+  setFilters,
+  clearFilters,
+  clearError,
+  setProducts,
+} = productSlice.actions;
+
 export default productSlice.reducer;

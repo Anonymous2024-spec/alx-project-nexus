@@ -18,6 +18,7 @@ interface FilterBottomSheetProps {
   onClose: () => void;
   filters: ProductFilters;
   onApplyFilters: (filters: ProductFilters) => void;
+  categories?: string[]; // Add categories prop for API data
 }
 
 interface Category {
@@ -31,13 +32,12 @@ export function FilterBottomSheet({
   onClose,
   filters,
   onApplyFilters,
+  categories: apiCategories = [], // Default to empty array
 }: FilterBottomSheetProps) {
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
-  const [categories, setCategories] = useState<Category[]>([
-    { id: "electronics", name: "Electronics", selected: false },
-    { id: "fashion", name: "Fashion", selected: true },
-    { id: "books", name: "Books", selected: false },
-  ]);
+
+  // Initialize categories from API data or use fallback
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const [priceRange, setPriceRange] = useState({
     min: filters.priceRange.min,
@@ -45,6 +45,48 @@ export function FilterBottomSheet({
   });
 
   const [sortBy, setSortBy] = useState(filters.sortBy);
+
+  // Update categories when API data changes
+  useEffect(() => {
+    if (apiCategories && apiCategories.length > 0) {
+      // Convert API categories to local category format
+      const formattedCategories = apiCategories.map((categoryName) => ({
+        id: categoryName.toLowerCase(),
+        name: categoryName,
+        selected: filters.category === categoryName,
+      }));
+      setCategories(formattedCategories);
+    } else {
+      // Fallback to hardcoded categories if API hasn't loaded yet
+      const fallbackCategories = [
+        {
+          id: "electronics",
+          name: "Electronics",
+          selected: filters.category === "Electronics",
+        },
+        {
+          id: "programming",
+          name: "Programming",
+          selected: filters.category === "Programming",
+        },
+        {
+          id: "fiction",
+          name: "Fiction",
+          selected: filters.category === "Fiction",
+        },
+      ];
+      setCategories(fallbackCategories);
+    }
+  }, [apiCategories, filters.category]);
+
+  // Update local state when filters prop changes
+  useEffect(() => {
+    setPriceRange({
+      min: filters.priceRange.min,
+      max: filters.priceRange.max,
+    });
+    setSortBy(filters.sortBy);
+  }, [filters]);
 
   useEffect(() => {
     if (visible) {
@@ -74,9 +116,14 @@ export function FilterBottomSheet({
 
   const handleCategoryToggle = (categoryId: string) => {
     setCategories((prev) =>
-      prev.map((cat) =>
-        cat.id === categoryId ? { ...cat, selected: !cat.selected } : cat
-      )
+      prev.map((cat) => {
+        if (cat.id === categoryId) {
+          return { ...cat, selected: !cat.selected };
+        } else {
+          // Only allow one category to be selected at a time
+          return { ...cat, selected: false };
+        }
+      })
     );
   };
 
@@ -90,16 +137,14 @@ export function FilterBottomSheet({
   const handleReset = () => {
     setCategories((prev) => prev.map((cat) => ({ ...cat, selected: false })));
     setPriceRange({ min: 0, max: 2000 });
-    setSortBy("price_asc");
+    setSortBy("name");
   };
 
   const handleApplyFilters = () => {
-    const selectedCategories = categories
-      .filter((cat) => cat.selected)
-      .map((cat) => cat.id);
+    const selectedCategory = categories.find((cat) => cat.selected);
 
     const newFilters: ProductFilters = {
-      category: selectedCategories.length > 0 ? selectedCategories[0] : null,
+      category: selectedCategory ? selectedCategory.name : null, // Use the display name for API
       priceRange,
       sortBy,
     };
@@ -241,28 +286,62 @@ export function FilterBottomSheet({
             <Text className="text-lg font-semibold text-neutral-900 mb-4">
               Categories
             </Text>
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                className="flex-row items-center mb-3"
-                onPress={() => handleCategoryToggle(category.id)}
-              >
-                <View
-                  className={`w-5 h-5 rounded border-2 mr-3 items-center justify-center ${
-                    category.selected
-                      ? "bg-primary-500 border-primary-500"
-                      : "border-neutral-300"
-                  }`}
-                >
-                  {category.selected && (
-                    <Ionicons name="checkmark" size={14} color="white" />
-                  )}
-                </View>
-                <Text className="text-neutral-800 text-base">
-                  {category.name}
+
+            {/* Show loading state if no categories yet */}
+            {categories.length === 0 ? (
+              <View className="flex-row items-center mb-3">
+                <View className="w-5 h-5 rounded border-2 border-neutral-300 mr-3 bg-neutral-100" />
+                <Text className="text-neutral-500 text-base">
+                  Loading categories...
                 </Text>
-              </TouchableOpacity>
-            ))}
+              </View>
+            ) : (
+              categories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  className="flex-row items-center mb-3"
+                  onPress={() => handleCategoryToggle(category.id)}
+                >
+                  <View
+                    className={`w-5 h-5 rounded border-2 mr-3 items-center justify-center ${
+                      category.selected
+                        ? "bg-primary-500 border-primary-500"
+                        : "border-neutral-300"
+                    }`}
+                  >
+                    {category.selected && (
+                      <Ionicons name="checkmark" size={14} color="white" />
+                    )}
+                  </View>
+                  <Text className="text-neutral-800 text-base">
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            )}
+
+            {/* All Categories option */}
+            <TouchableOpacity
+              className="flex-row items-center mb-3"
+              onPress={() =>
+                setCategories((prev) =>
+                  prev.map((cat) => ({ ...cat, selected: false }))
+                )
+              }
+            >
+              <View
+                className={`w-5 h-5 rounded border-2 mr-3 items-center justify-center ${
+                  !categories.some((cat) => cat.selected)
+                    ? "bg-primary-500 border-primary-500"
+                    : "border-neutral-300"
+                }`}
+              >
+                {!categories.some((cat) => cat.selected) && (
+                  <Ionicons name="checkmark" size={14} color="white" />
+                )}
+              </View>
+              <Text className="text-neutral-800 text-base">All Categories</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Price Range */}
@@ -278,6 +357,29 @@ export function FilterBottomSheet({
             <Text className="text-lg font-semibold text-neutral-900 mb-4">
               Sort By
             </Text>
+
+            {/* Price: Low to High */}
+            <TouchableOpacity
+              className="flex-row items-center mb-3"
+              onPress={() => setSortBy("price_asc")}
+            >
+              <View
+                className={`w-5 h-5 rounded-full border-2 mr-3 items-center justify-center ${
+                  sortBy === "price_asc"
+                    ? "border-primary-500"
+                    : "border-neutral-300"
+                }`}
+              >
+                {sortBy === "price_asc" && (
+                  <View className="w-3 h-3 rounded-full bg-primary-500" />
+                )}
+              </View>
+              <Text className="text-neutral-800 text-base">
+                Price: Low to High
+              </Text>
+            </TouchableOpacity>
+
+            {/* Price: High to Low */}
             <TouchableOpacity
               className="flex-row items-center mb-3"
               onPress={() => setSortBy("price_desc")}
@@ -298,6 +400,7 @@ export function FilterBottomSheet({
               </Text>
             </TouchableOpacity>
 
+            {/* Name: A to Z */}
             <TouchableOpacity
               className="flex-row items-center mb-3"
               onPress={() => setSortBy("name")}
@@ -314,6 +417,46 @@ export function FilterBottomSheet({
                 )}
               </View>
               <Text className="text-neutral-800 text-base">Name: A to Z</Text>
+            </TouchableOpacity>
+
+            {/* Newest First */}
+            <TouchableOpacity
+              className="flex-row items-center mb-3"
+              onPress={() => setSortBy("newest")}
+            >
+              <View
+                className={`w-5 h-5 rounded-full border-2 mr-3 items-center justify-center ${
+                  sortBy === "newest"
+                    ? "border-primary-500"
+                    : "border-neutral-300"
+                }`}
+              >
+                {sortBy === "newest" && (
+                  <View className="w-3 h-3 rounded-full bg-primary-500" />
+                )}
+              </View>
+              <Text className="text-neutral-800 text-base">Newest First</Text>
+            </TouchableOpacity>
+
+            {/* Rating: High to Low */}
+            <TouchableOpacity
+              className="flex-row items-center mb-3"
+              onPress={() => setSortBy("rating")}
+            >
+              <View
+                className={`w-5 h-5 rounded-full border-2 mr-3 items-center justify-center ${
+                  sortBy === "rating"
+                    ? "border-primary-500"
+                    : "border-neutral-300"
+                }`}
+              >
+                {sortBy === "rating" && (
+                  <View className="w-3 h-3 rounded-full bg-primary-500" />
+                )}
+              </View>
+              <Text className="text-neutral-800 text-base">
+                Rating: High to Low
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

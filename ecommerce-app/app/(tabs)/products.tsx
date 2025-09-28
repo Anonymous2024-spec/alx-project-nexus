@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -11,163 +17,128 @@ import SearchBar from "@/components/commons/SearchBar";
 import { useTheme } from "@/contexts/ThemeContext";
 import { HeaderCartIcon } from "@/components/commons/CartIcon";
 
+// Redux imports
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import {
+  fetchProducts,
+  fetchCategories,
+  setSearchQuery as setReduxSearchQuery,
+  setFilters as setReduxFilters,
+  clearFilters,
+  clearError,
+} from "@/lib/redux/slices/productSlice";
+
 export default function ProductsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { colors } = useTheme();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [products, setProducts] = useState<Product[]>([]);
+  const dispatch = useAppDispatch();
+
+  // Redux state
+  const {
+    products,
+    categories,
+    loading,
+    error,
+    filters: reduxFilters,
+    searchQuery: reduxSearchQuery,
+  } = useAppSelector((state) => state.products);
+
+  // Local state
   const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
 
-  // Initialize filters with category from URL parameter
-  const [filters, setFilters] = useState<ProductFilters>({
-    category: (params.category as string) || null,
-    priceRange: { min: 0, max: 2000 },
-    sortBy: "price_asc",
-  });
-
-  // Mock data using your exact Product interface
-  const mockProducts: Product[] = [
-    {
-      id: 1,
-      title: "Wireless Headphones",
-      description: "High-quality wireless headphones with noise cancellation",
-      price: 149.99,
-      category: "electronics",
-      image:
-        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=150&h=150&fit=crop",
-      rating: { rate: 4.5, count: 128 },
-    },
-    {
-      id: 2,
-      title: "Smart Watch",
-      description: "Advanced smartwatch with health monitoring features",
-      price: 299.99,
-      category: "electronics",
-      image:
-        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=150&h=150&fit=crop",
-      rating: { rate: 4.3, count: 89 },
-    },
-    {
-      id: 3,
-      title: "Bluetooth Speaker",
-      description: "Portable Bluetooth speaker with premium sound quality",
-      price: 79.99,
-      category: "electronics",
-      image:
-        "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=150&h=150&fit=crop",
-      rating: { rate: 4.7, count: 256 },
-    },
-    {
-      id: 4,
-      title: "iPhone 15 Pro",
-      description: "Latest iPhone with advanced camera system",
-      price: 999.99,
-      category: "electronics",
-      image:
-        "https://images.unsplash.com/photo-1592899677977-9c10c23f31e1?w=150&h=150&fit=crop",
-      rating: { rate: 4.8, count: 342 },
-    },
-    {
-      id: 5,
-      title: "MacBook Air M3",
-      description: "Powerful and lightweight laptop for professionals",
-      price: 1299.99,
-      category: "electronics",
-      image:
-        "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=150&h=150&fit=crop",
-      rating: { rate: 4.6, count: 167 },
-    },
-    {
-      id: 6,
-      title: "Fashion Jacket",
-      description: "Stylish winter jacket for modern professionals",
-      price: 299.99,
-      category: "fashion",
-      image:
-        "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=150&h=150&fit=crop",
-      rating: { rate: 4.4, count: 203 },
-    },
-    {
-      id: 7,
-      title: "Design Book",
-      description: "Complete guide to modern UI/UX design principles",
-      price: 49.99,
-      category: "books",
-      image:
-        "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=150&h=150&fit=crop",
-      rating: { rate: 4.9, count: 95 },
-    },
-    {
-      id: 8,
-      title: "Gaming Console",
-      description: "Next-gen gaming console with ultra-fast SSD",
-      price: 499.99,
-      category: "electronics",
-      image:
-        "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=150&h=150&fit=crop",
-      rating: { rate: 4.7, count: 412 },
-    },
-    {
-      id: 9,
-      title: "Drone 4K",
-      description: "Professional drone with 4K camera and GPS",
-      price: 649.99,
-      category: "electronics",
-      image:
-        "https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=150&h=150&fit=crop",
-      rating: { rate: 4.2, count: 156 },
-    },
-  ];
-
-  // Update filters when URL parameters change
+  // SIMPLIFIED: Handle params and fetch data in one effect
   useEffect(() => {
-    if (params.category) {
-      setFilters((prev) => ({
-        ...prev,
-        category: params.category as string,
-      }));
-    }
-    if (params.q) {
-      setSearchQuery(params.q as string);
-    }
-  }, [params]);
+    const handleParamsAndFetch = async () => {
+      console.log("📥 Params received:", params);
 
-  // Simulate API loading
-  useEffect(() => {
-    const loadProducts = async () => {
-      setLoading(true);
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setProducts(mockProducts);
-      setLoading(false);
+      try {
+        dispatch(clearError());
+
+        // Set filters from params
+        const newFilters: ProductFilters = {
+          category: (params.category as string) || null,
+          priceRange: { min: 0, max: 2000 },
+          sortBy: "name",
+        };
+
+        console.log("🎛️ Setting filters:", newFilters);
+        dispatch(setReduxFilters(newFilters));
+
+        // Set search from params
+        if (params.q) {
+          const query = params.q as string;
+          setLocalSearchQuery(query);
+          dispatch(setReduxSearchQuery(query));
+        }
+
+        // Fetch categories
+        await dispatch(fetchCategories()).unwrap();
+
+        // Fetch products with filters
+        console.log("🌐 Fetching products with:", {
+          category: newFilters.category,
+          search: params.q as string,
+        });
+
+        await dispatch(
+          fetchProducts({
+            limit: 20,
+            offset: 0,
+            category: newFilters.category || undefined,
+            search: (params.q as string) || undefined,
+          })
+        ).unwrap();
+      } catch (error) {
+        console.error("Error loading data:", error);
+      }
     };
 
-    loadProducts();
-  }, []);
+    handleParamsAndFetch();
+  }, [params.category, params.q, dispatch]);
 
-  // Enhanced filtering logic
+  // Fetch when redux filters change (from filter sheet)
+  useEffect(() => {
+    const fetchWithCurrentFilters = async () => {
+      // Skip if this is the initial load (handled above)
+      if (!reduxFilters.category && !reduxSearchQuery) return;
+
+      console.log("🔄 Filters changed, fetching:", {
+        category: reduxFilters.category,
+        search: reduxSearchQuery,
+      });
+
+      try {
+        await dispatch(
+          fetchProducts({
+            limit: 20,
+            offset: 0,
+            category: reduxFilters.category || undefined,
+            search: reduxSearchQuery || undefined,
+          })
+        ).unwrap();
+      } catch (error) {
+        console.error("Error fetching with filters:", error);
+      }
+    };
+
+    // Debounce the fetch
+    const timeoutId = setTimeout(fetchWithCurrentFilters, 300);
+    return () => clearTimeout(timeoutId);
+  }, [reduxFilters.category, reduxSearchQuery, dispatch]);
+
+  // Apply local filtering and sorting
   const filteredProducts = products.filter((product) => {
-    // Text search
-    const matchesSearch =
-      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-    // Category filter
-    const matchesCategory =
-      !filters.category || product.category === filters.category;
-
-    // Price range filter
     const matchesPrice =
-      product.price >= filters.priceRange.min &&
-      product.price <= filters.priceRange.max;
-
-    return matchesSearch && matchesCategory && matchesPrice;
+      product.price >= reduxFilters.priceRange.min &&
+      product.price <= reduxFilters.priceRange.max;
+    return matchesPrice;
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (filters.sortBy) {
+    switch (reduxFilters.sortBy) {
       case "price_asc":
         return a.price - b.price;
       case "price_desc":
@@ -176,39 +147,81 @@ export default function ProductsScreen() {
         return b.rating.rate - a.rating.rate;
       case "name":
         return a.title.localeCompare(b.title);
+      case "newest":
+        if (a.created_at && b.created_at) {
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        }
+        return b.id - a.id;
       default:
         return 0;
     }
   });
 
-  const handleApplyFilters = (newFilters: ProductFilters) => {
-    setFilters(newFilters);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      dispatch(clearError());
+
+      await Promise.all([
+        dispatch(fetchCategories()).unwrap(),
+        dispatch(
+          fetchProducts({
+            limit: 20,
+            offset: 0,
+            category: reduxFilters.category || undefined,
+            search: reduxSearchQuery || undefined,
+          })
+        ).unwrap(),
+      ]);
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
+
+  const handleApplyFilters = useCallback(
+    (newFilters: ProductFilters) => {
+      dispatch(setReduxFilters(newFilters));
+      setShowFilterSheet(false);
+    },
+    [dispatch]
+  );
 
   const handleProductPress = (product: Product) => {
-    router.push(`/product/${product.id}`);
+    router.push({
+      pathname: `/product/[id]`,
+      params: {
+        id: product.id.toString(),
+        productData: JSON.stringify(product),
+      },
+    });
   };
 
-  const handleRefresh = async () => {
-    setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setProducts(mockProducts);
-    setLoading(false);
-  };
+  const handleSearch = useCallback(
+    (query: string) => {
+      setLocalSearchQuery(query);
+      dispatch(setReduxSearchQuery(query));
+    },
+    [dispatch]
+  );
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
-
-  const clearCategoryFilter = () => {
-    setFilters((prev) => ({ ...prev, category: null }));
-    // Update URL to remove category parameter
+  const clearCategoryFilter = useCallback(() => {
+    const newFilters = { ...reduxFilters, category: null };
+    dispatch(setReduxFilters(newFilters));
     router.replace("/(tabs)/products");
-  };
+  }, [reduxFilters, router, dispatch]);
 
   const getCategoryDisplayName = (category: string) => {
     return category.charAt(0).toUpperCase() + category.slice(1);
   };
+
+  const handleRetryAfterError = useCallback(() => {
+    dispatch(clearError());
+    handleRefresh();
+  }, [dispatch, handleRefresh]);
 
   return (
     <SafeAreaView
@@ -218,9 +231,41 @@ export default function ProductsScreen() {
     >
       {/* Header */}
       <View className="px-6 pt-6 pb-4 flex-row justify-between items-center">
-        <Text className="text-3xl font-bold" style={{ color: colors.text }}>
-          Products
-        </Text>
+        <View className="flex-1">
+          <Text className="text-3xl font-bold" style={{ color: colors.text }}>
+            Products
+          </Text>
+
+          {/* Category filter indicator */}
+          {reduxFilters.category && (
+            <View className="flex-row items-center mt-1">
+              <Text className="text-sm" style={{ color: colors.textSecondary }}>
+                Category: {getCategoryDisplayName(reduxFilters.category)}
+              </Text>
+              <TouchableOpacity
+                onPress={clearCategoryFilter}
+                className="ml-2 p-1"
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={16}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Products count */}
+          {!loading && (
+            <Text
+              className="text-sm mt-1"
+              style={{ color: colors.textSecondary }}
+            >
+              {sortedProducts.length} product
+              {sortedProducts.length !== 1 ? "s" : ""} found
+            </Text>
+          )}
+        </View>
 
         {/* Right side icons */}
         <View className="flex-row items-center">
@@ -228,23 +273,73 @@ export default function ProductsScreen() {
 
           <TouchableOpacity
             className="p-2 ml-2"
-            onPress={handleRefresh}
+            onPress={() => setShowFilterSheet(true)}
             disabled={loading}
           >
             <Ionicons
-              name="refresh"
+              name="filter"
               size={24}
               color={loading ? colors.textSecondary : colors.primary}
             />
           </TouchableOpacity>
+
+          <TouchableOpacity
+            className="p-2 ml-1"
+            onPress={handleRefresh}
+            disabled={loading || refreshing}
+          >
+            <Ionicons
+              name="refresh"
+              size={24}
+              color={
+                loading || refreshing ? colors.textSecondary : colors.primary
+              }
+            />
+          </TouchableOpacity>
         </View>
       </View>
+
+      {/* Search Bar */}
+      <View className="px-6 mb-4">
+        <SearchBar
+          value={localSearchQuery}
+          onChangeText={setLocalSearchQuery}
+          onSearch={handleSearch}
+          placeholder="Search products..."
+        />
+      </View>
+
+      {/* Error State */}
+      {error && !loading && (
+        <View className="mx-6 mb-4 p-4 rounded-lg bg-red-50 border border-red-200">
+          <View className="flex-row items-center">
+            <Ionicons name="alert-circle" size={20} color="#DC2626" />
+            <Text className="ml-2 text-red-800 font-medium flex-1">
+              {error}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={handleRetryAfterError}
+            className="mt-2 bg-red-600 px-3 py-2 rounded self-start"
+          >
+            <Text className="text-white text-sm font-medium">Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* SCROLLABLE PRODUCTS LIST */}
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 20 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         {/* Products Grid or Loading Skeleton */}
         {loading ? (
@@ -261,7 +356,7 @@ export default function ProductsScreen() {
               ))}
 
               {/* Empty State */}
-              {sortedProducts.length === 0 && !loading && (
+              {sortedProducts.length === 0 && !loading && !error && (
                 <View className="items-center justify-center py-16">
                   <Ionicons
                     name="search"
@@ -275,11 +370,29 @@ export default function ProductsScreen() {
                     No products found
                   </Text>
                   <Text
-                    className="text-center mt-2"
+                    className="text-center mt-2 px-4"
                     style={{ color: colors.textSecondary }}
                   >
-                    Try adjusting your search terms or filters
+                    {reduxSearchQuery || reduxFilters.category
+                      ? "Try adjusting your search terms or filters"
+                      : "No products available at the moment"}
                   </Text>
+
+                  {/* Clear filters button if filters are applied */}
+                  {(reduxSearchQuery || reduxFilters.category) && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        dispatch(clearFilters());
+                        setLocalSearchQuery("");
+                        router.replace("/(tabs)/products");
+                      }}
+                      className="mt-4 bg-gray-200 px-4 py-2 rounded-lg"
+                    >
+                      <Text style={{ color: colors.text }}>
+                        Clear all filters
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             </View>
@@ -291,8 +404,9 @@ export default function ProductsScreen() {
       <FilterBottomSheet
         visible={showFilterSheet}
         onClose={() => setShowFilterSheet(false)}
-        filters={filters}
+        filters={reduxFilters}
         onApplyFilters={handleApplyFilters}
+        categories={categories}
       />
     </SafeAreaView>
   );
