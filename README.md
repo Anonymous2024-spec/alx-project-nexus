@@ -766,11 +766,10 @@ Solo Development              →    Team Collaboration
 
 ## 📞 Connect With Me
 
-- **GitHub:** [@shifah-naana](https://github.com/shifah-naana) _(update with your actual username)_
-- **LinkedIn:** [Your LinkedIn](https://linkedin.com/in/your-profile) _(update with your profile)_
-- **Email:** your.email@example.com _(update with your email)_
-- **Portfolio:** [Your Portfolio](https://yourportfolio.com) _(update with your site)_
-
+- **GitHub:** [@Anonymous2024-spec](https://github.com/Anonymous2024-spec)
+- **LinkedIn:** [Shifah Naana](https://www.linkedin.com/in/shifah-naana/) _
+- **Email:** nanashifah2@gmail.com
+- **Portfolio:** [My Portfolio](https://naana-portfolio.netlify.app/)
 ---
 
 ## 📄 Project Information
